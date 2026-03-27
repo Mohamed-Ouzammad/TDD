@@ -1,25 +1,38 @@
+const TWO_DAYS = 48 * 60 * 60 * 1000;
+
+function isOverlapping(a, b) {
+  return a.start < b.end && a.end > b.start;
+}
+
 export function createReservation(res, reservations) {
+
+  if (!res.name) {
+    throw new Error("Name required");
+  }
 
   if (res.end <= res.start) {
     throw new Error("Invalid dates");
   }
 
-  for (let r of reservations) {
-    if (res.start < r.end && res.end > r.start) {
+  for (let existing of reservations) {
+    if (isOverlapping(res, existing)) {
       throw new Error("Overlap");
     }
   }
 
-  reservations.push(res);
-  return reservations;
+  return [...reservations, res];
 }
 
 export function cancelReservation(id, now, reservations) {
   const res = reservations.find(r => r.id === id);
 
-  const diff = res.start - now;
+  if (!res) {
+    throw new Error("Not found");
+  }
 
-  if (diff < 172800000) {
+  const timeBeforeStart = res.start - now;
+
+  if (timeBeforeStart < TWO_DAYS) {
     throw new Error("Too late");
   }
 
@@ -27,7 +40,7 @@ export function cancelReservation(id, now, reservations) {
 }
 
 export function getActiveReservations(date, reservations) {
-  return reservations.filter(r =>
-    date >= r.start && date < r.end
+  return reservations.filter(res =>
+    date >= res.start && date < res.end
   );
 }
